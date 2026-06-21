@@ -9,3 +9,6 @@ Thumbs.db
 dist/
 .cache/
 coverage/
+
+
+push_sequence.txt

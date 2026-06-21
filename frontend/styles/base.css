@@ -1,0 +1,406 @@
+/**
+ * KoshBox — Base Styles
+ * CSS custom properties, reset, and typography.
+ * All color decisions derive from these variables only.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ── Custom Properties ──────────────────────────────────────────────────── */
+:root {
+  /* Surface hierarchy */
+  --bg-root:        #111111;
+  --bg-panel:       #1a1a1a;
+  --bg-panel-inner: #222222;
+  --bg-control:     #2a2a2a;
+  --bg-control-hover: #333333;
+  --bg-device:      #0d0d0d;
+  --bg-device-screen: #050505;
+
+  /* Borders */
+  --border-subtle:  #252525;
+  --border-default: #2e2e2e;
+  --border-strong:  #3a3a3a;
+  --border-input:   #383838;
+
+  /* Text */
+  --text-primary:   #e2e2e2;
+  --text-secondary: #888888;
+  --text-muted:     #555555;
+  --text-label:     #aaaaaa;
+  --text-value:     #ffffff;
+  --text-dim:       #444444;
+
+  /* Accent palette — borrowed from the KoshBox notes doc */
+  --accent-purple:   #7A72E0;
+  --accent-purple-l: #1e1c40;
+  --accent-teal:     #2BBE96;
+  --accent-teal-l:   #0a2420;
+  --accent-amber:    #E0A23B;
+  --accent-amber-l:  #1e1000;
+
+  /* Status indicator colors — only these are chromatic */
+  --led-power-on:   #22c55e;
+  --led-power-off:  #2a2a2a;
+  --led-battery:    #22c55e;
+  --led-battery-low:#ef4444;
+  --led-network:    #3b82f6;
+  --led-network-off:#2a2a2a;
+  --led-payment:    #ffffff;
+  --led-payment-off:#2a2a2a;
+
+  /* Status text colors */
+  --status-confirmed: #22c55e;
+  --status-pending:   #f59e0b;
+  --status-failed:    #ef4444;
+  --status-info:      #3b82f6;
+
+  /* Toggle */
+  --toggle-on:  var(--accent-purple);
+  --toggle-off: #333333;
+
+  /* Typography */
+  --font-ui:    'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif: 'IBM Plex Serif', Georgia, serif;
+  --font-mono:  'IBM Plex Mono', 'Fira Code', monospace;
+
+  /* Type scale */
+  --text-xs:   10px;
+  --text-sm:   11px;
+  --text-base: 12px;
+  --text-md:   13px;
+  --text-lg:   14px;
+  --text-xl:   16px;
+  --text-2xl:  20px;
+  --text-3xl:  24px;
+
+  /* Spacing */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+
+  /* Radius — zero everywhere (sharp, document-like aesthetic) */
+  --radius-sm:  0px;
+  --radius-md:  0px;
+  --radius-lg:  0px;
+  --radius-xl:  0px;
+  --radius-device: 0px;
+
+  /* Transitions */
+  --transition-fast:   0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow:   0.4s ease;
+
+  /* Shadows */
+  --shadow-panel: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow-device: 0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5);
+  --shadow-button: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-inset:  inset 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-root);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+.panel-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-value);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.section-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.data-label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ── Selection ──────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: var(--text-value);
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 1px solid var(--border-strong);
+  outline-offset: 2px;
+}
+
+/* ── Utility Classes ────────────────────────────────────────────────────── */
+.hidden  { display: none !important; }
+.visible { display: block !important; }
+.flex    { display: flex; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-value     { color: var(--text-value); }
+
+.status-confirmed { color: var(--status-confirmed); }
+.status-pending   { color: var(--status-pending); }
+.status-failed    { color: var(--status-failed); }
+.status-info      { color: var(--status-info); }
+
+/* ── Divider ────────────────────────────────────────────────────────────── */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--space-4) 0;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes pulse-fast {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.1; }
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100%{ opacity: 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.05); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Reduced Motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Toast Notifications ────────────────────────────────────────────────── */
+.toast-stack {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 500;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-panel-inner);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent-teal);
+  padding: 10px 14px;
+  min-width: 220px;
+  max-width: 320px;
+  box-shadow: var(--shadow-device);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  animation: toastIn 0.18s ease;
+}
+
+.toast.warn  { border-left-color: var(--status-pending); }
+.toast.error { border-left-color: var(--status-failed); }
+
+.toast__icon {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--accent-teal);
+  flex-shrink: 0;
+}
+
+.toast.warn  .toast__icon { color: var(--status-pending); }
+.toast.error .toast__icon { color: var(--status-failed); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(6px); }
+}
+
+.toast.leaving { animation: toastOut 0.15s ease forwards; }
+
+/* ── Truncated value badge w/ copy (e.g. wallet addresses) ────────────────── */
+.copy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-control);
+  border: 1px solid var(--border-default);
+  padding: 5px var(--space-2) 5px var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  max-width: 100%;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.copy-badge:hover {
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+.copy-badge__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-badge__icon {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--accent-purple);
+}
+
+/* ── Draggable Window (only applied once floated) ──────────────────────── */
+.drag-window {
+  background: var(--bg-panel-inner);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-device);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Dock / Float Handle ─────────────────────────────────────────────────── */
+.dock-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.dock-handle__title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dock-handle__btn {
+  background: none;
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.dock-handle__btn:hover {
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+/* When floating, the whole handle becomes the drag grip */
+.dock-handle--dragHandle {
+  cursor: grab;
+  background: var(--bg-control);
+  padding: 6px var(--space-3);
+  margin: -1px -1px var(--space-2);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.dock-handle--dragHandle:active { cursor: grabbing; }

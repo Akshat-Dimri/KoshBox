@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="KoshBox — Merchant Payment Infrastructure Simulator">
+  <title>KoshBox Simulator</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/controls.css">
+  <link rel="stylesheet" href="styles/device.css">
+  <link rel="stylesheet" href="styles/qr.css">
+  <link rel="stylesheet" href="styles/modal.css">
+  <link rel="stylesheet" href="styles/controls-panel.css">
+
+  <!-- qrcode.js for QR generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── App Header ──────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="app-header__brand">
+      <span class="app-header__logo">KOSHBOX</span>
+      <span class="app-header__tag">Simulator v1.0</span>
+    </div>
+    <div class="app-header__meta">
+      <button class="app-header__controls-toggle" id="btn-toggle-drawer">&#9776; Controls</button>
+      <div class="app-header__network" id="header-network">
+        <span class="app-header__network-dot" id="header-network-dot"></span>
+        <span id="header-network-label">Kosh Testnet</span>
+      </div>
+      <span class="app-header__time" id="header-clock">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- ── Three-Column Grid ───────────────────────────────────────────── -->
+  <main class="simulator-grid">
+
+    <!-- ════════════════════════════════════════════════════════════════
+         LEFT PANEL — QR Module
+    ════════════════════════════════════════════════════════════════════ -->
+    <section class="panel panel--left">
+      <div class="panel__header">
+        <div class="panel__title">QR Module</div>
+      </div>
+
+      <div class="panel__body qr-panel" style="padding: 0;">
+
+        <!-- Fixed Merchant QR -->
+        <div style="padding: var(--space-4) var(--space-5) 0;">
+          <div class="panel-section__label" style="margin-bottom: var(--space-3);">Fixed Merchant QR</div>
+        </div>
+
+        <!-- QR device frame with perspective tilt -->
+        <div class="qr-frame-wrapper">
+          <div class="qr-device-frame">
+            <div class="qr-device-frame__label" id="qr-frame-label">KOSHBOX_FIXED_QR</div>
+            <div class="qr-canvas-wrapper" id="qr-canvas-wrapper">
+              <!-- QR renders here -->
+              <div id="qr-canvas"></div>
+              <div class="qr-canvas-wrapper__refresh-overlay" id="qr-refresh-overlay">
+                <div class="qr-canvas-wrapper__refresh-icon"></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:center; margin-top: var(--space-2);">
+              <span class="qr-mode-badge" id="qr-mode-badge">
+                <span class="qr-mode-badge__dot"></span>
+                <span id="qr-mode-label">Fixed</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merchant address display -->
+        <div style="padding: 0 var(--space-5) var(--space-3);">
+          <div class="qr-merchant-info">
+            <div class="copy-badge" id="merchant-address-badge" title="Click to copy full address">
+              <span class="copy-badge__text" id="merchant-address-display">0x742d35Cc...a7C2F1E</span>
+              <span class="copy-badge__icon">⧉</span>
+            </div>
+            <div class="qr-merchant-info__network" id="merchant-network-display">
+              Kosh Testnet — KOSH
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider" style="margin: 0;"></div>
+
+        <!-- Dynamic QR Section -->
+        <div class="dynamic-qr-section">
+          <div class="dynamic-qr-section__header">Dynamic QR</div>
+          <div class="dynamic-qr-section__sublabel">Rotate every:</div>
+
+          <div class="qr-rotation-row">
+            <select class="select" id="rotation-interval-select">
+              <option value="1800000" selected>30 Minutes</option>
+              <option value="3600000">1 Hour</option>
+              <option value="10800000">3 Hours</option>
+              <option value="21600000">6 Hours</option>
+              <option value="43200000">12 Hours</option>
+              <option value="86400000">24 Hours</option>
+            </select>
+          </div>
+          <div class="qr-rotation-actions">
+            <button class="btn btn--sm" id="btn-qr-reset">Reset</button>
+            <button class="btn btn--sm btn--accent" id="btn-qr-confirm">Confirm</button>
+          </div>
+
+          <!-- Timer countdown (visible when dynamic mode active) -->
+          <div class="qr-timer hidden" id="qr-rotation-timer">
+            <span class="qr-timer__label">Next rotation</span>
+            <span class="qr-timer__countdown" id="qr-timer-countdown">--:--</span>
+          </div>
+        </div>
+
+        <!-- Recent Payments (moved here from control center) -->
+        <div class="recent-payments-mini">
+          <div class="recent-payments-mini__header">Recent Payments</div>
+          <table class="payments-table" id="recent-payments-table">
+            <tbody id="recent-payments-body">
+              <tr><td colspan="3" class="payments-empty">No payments yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         CENTER PANEL — Interactive KoshBox Device
+    ════════════════════════════════════════════════════════════════════ -->
+    <section class="panel panel--center">
+      <div class="panel__header">
+        <div class="panel__title">Interactive KoshBox Device</div>
+      </div>
+
+      <div class="panel__body">
+
+        <!-- Callout labels top row -->
+        <div class="callout-row-top">
+          <span class="data-label">Battery Indicator</span>
+          <span class="data-label">Network Indicator</span>
+        </div>
+
+        <!-- Device + side callouts -->
+        <div class="device-row">
+
+          <!-- Left callout -->
+          <div class="device-callout-left">
+            <span class="callout-label-text">Power Indicator</span>
+          </div>
+
+          <!-- ── Device Body ──────────────────────────────────────── -->
+          <div class="device-body" id="device-body">
+
+            <!-- Top bar — speaker grille -->
+            <div class="device-top-bar">
+              <div class="device-top-bar__speaker-grille">
+                <span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+
+            <!-- Status bar — LEDs + info -->
+            <div class="device-status-bar">
+
+              <!-- Power LED -->
+              <div class="status-indicator status-indicator--power">
+                <div class="status-indicator__led" id="led-power"></div>
+                <div class="status-indicator__value" id="led-power-label">OFF</div>
+              </div>
+
+              <!-- Battery indicator -->
+              <div class="status-indicator status-indicator--battery">
+                <div class="status-indicator__led" id="led-battery"></div>
+                <div class="status-indicator__value" id="led-battery-label">85%</div>
+              </div>
+
+              <!-- Network indicator -->
+              <div class="status-indicator status-indicator--network">
+                <div class="status-indicator__led" id="led-network"></div>
+                <div class="status-indicator__value" id="led-network-label">Idle/Ready</div>
+              </div>
+
+              <!-- Speaker/Volume indicator -->
+              <div class="status-indicator">
+                <div style="width:10px;height:10px;display:flex;align-items:center;justify-content:center;">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" id="volume-wave"/>
+                  </svg>
+                </div>
+                <div class="status-indicator__value" id="led-volume-label">80%</div>
+              </div>
+
+              <!-- Language indicator -->
+              <div class="status-indicator">
+                <div style="width:10px;height:10px;display:flex;align-items:center;justify-content:center;">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                  </svg>
+                </div>
+                <div class="status-indicator__value" id="led-lang-label">EN</div>
+              </div>
+
+              <!-- Payment status -->
+              <div class="status-indicator status-indicator--payment">
+                <div class="status-indicator__led" id="led-payment"></div>
+                <div class="status-indicator__value" id="led-payment-label">—</div>
+              </div>
+
+            </div>
+
+            <!-- Device screen -->
+            <div class="device-screen" id="device-screen">
+
+              <!-- Phone-style status bar (top of screen) -->
+              <div class="phone-status-bar">
+                <div class="phone-status-bar__item">
+                  <svg width="12" height="9" viewBox="0 0 16 12" fill="none">
+                    <rect x="0" y="8" width="3" height="4" fill="currentColor"/>
+                    <rect x="4.5" y="5" width="3" height="7" fill="currentColor"/>
+                    <rect x="9" y="2.5" width="3" height="9.5" fill="currentColor"/>
+                    <rect x="13" y="0" width="3" height="12" fill="currentColor" opacity="0.35" id="phone-signal-bar4"/>
+                  </svg>
+                  <span id="phone-status-network">Offline</span>
+                </div>
+                <div class="phone-status-bar__item">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" id="phone-status-sound-wave"/>
+                  </svg>
+                  <span id="phone-status-volume">70%</span>
+                </div>
+                <div class="phone-status-bar__item">
+                  <span id="phone-status-battery">85%</span>
+                  <svg width="16" height="9" viewBox="0 0 22 11" fill="none">
+                    <rect x="0.5" y="0.5" width="19" height="10" rx="0" stroke="currentColor"/>
+                    <rect x="20.5" y="3" width="1.5" height="5" fill="currentColor"/>
+                    <rect x="2" y="2" width="15" height="7" fill="currentColor" id="phone-battery-fill"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Boot animation -->
+              <div class="boot-sequence" id="boot-sequence">
+                <div class="boot-sequence__logo">KOSHBOX</div>
+                <div class="boot-sequence__bar">
+                  <div class="boot-sequence__bar-fill" id="boot-bar"></div>
+                </div>
+                <div class="boot-sequence__text" id="boot-text">Initializing...</div>
+              </div>
+
+              <!-- Main screen content -->
+              <div class="device-screen__content" id="screen-content">
+                <div class="device-screen__brand" id="screen-brand">KOSHBOX</div>
+                <div class="device-screen__hint" id="screen-hint">TAP TO INTERACT</div>
+                <div class="device-screen__status" id="screen-status"></div>
+              </div>
+
+              <!-- Payment flash overlay -->
+              <div class="device-screen__payment-flash" id="payment-flash">
+                <svg class="payment-tick" id="payment-tick" width="56" height="56" viewBox="0 0 56 56">
+                  <circle class="payment-tick__circle" cx="28" cy="28" r="25" fill="none" stroke-width="3"/>
+                  <path class="payment-tick__check" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M16 29l8 8 16-18"/>
+                </svg>
+                <div class="device-screen__payment-amount" id="payment-flash-amount"></div>
+                <div class="device-screen__payment-label" id="payment-flash-label">PAYMENT RECEIVED</div>
+              </div>
+
+            </div>
+
+            <!-- Interaction tooltip -->
+            <div class="device-tooltip" id="device-tooltip">
+              <div class="device-tooltip__row">
+                <span class="device-tooltip__key">Single Click</span>
+                <span class="device-tooltip__val">Device Information</span>
+              </div>
+              <div class="device-tooltip__row">
+                <span class="device-tooltip__key">Double Click</span>
+                <span class="device-tooltip__val">Open Exploded View</span>
+              </div>
+              <div class="device-tooltip__row">
+                <span class="device-tooltip__key">Long Press</span>
+                <span class="device-tooltip__val">Advanced Diagnostics</span>
+              </div>
+            </div>
+
+            <!-- USB-C port -->
+            <div class="device-bottom-bar">
+              <div class="device-bottom-bar__port"></div>
+            </div>
+
+          </div>
+          <!-- ── End Device Body ──────────────────────────────────── -->
+
+          <!-- Right callout -->
+          <div class="device-callout-right">
+            <span class="callout-label-text">Payment Status</span>
+          </div>
+
+        </div><!-- end device-row -->
+
+        <!-- Device info strip -->
+        <div class="device-info-strip">
+          <div class="inner-card">
+            <div class="stat-row">
+              <span class="stat-row__label">Device ID</span>
+              <span class="stat-row__value mono" id="info-device-id">KOSHBOX-001</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row__label">Uptime</span>
+              <span class="stat-row__value mono" id="info-uptime">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row__label">Total Payments</span>
+              <span class="stat-row__value mono" id="info-total-payments">0</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row__label">Block Height</span>
+              <span class="stat-row__value mono" id="info-block-height">—</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-row__label">Firmware</span>
+              <span class="stat-row__value mono">v1.0.0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom background image -->
+        <div class="bg-upload-row">
+          <button class="btn btn--sm" id="btn-bg-upload">Set Background Image</button>
+          <button class="btn btn--sm" id="btn-bg-reset" style="display:none;">Reset Background</button>
+          <input type="file" id="bg-upload-input" accept="image/*" style="display:none;">
+        </div>
+
+      </div><!-- end panel__body -->
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════
+         RIGHT PANEL — Control Center
+    ════════════════════════════════════════════════════════════════════ -->
+    <section class="panel panel--right" id="panel-right">
+      <div class="panel__header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="panel__title">Control Center</div>
+        <button class="btn btn--sm" id="btn-close-drawer" style="display:none;" onclick="document.getElementById('panel-right').classList.remove('drawer-open')">&#215;</button>
+      </div>
+
+      <div class="control-panel">
+
+        <!-- Device Power -->
+        <div class="control-section">
+          <div class="control-section__label">Device Power</div>
+          <div class="power-switch-row">
+            <label class="big-toggle" id="power-toggle-wrapper">
+              <input type="checkbox" class="big-toggle__input" id="toggle-power">
+              <span class="big-toggle__track">
+                <span class="big-toggle__thumb"></span>
+              </span>
+            </label>
+            <span class="power-switch-row__label" id="power-switch-label">Powered Off</span>
+          </div>
+        </div>
+
+        <!-- Audio Controls -->
+        <div class="control-section">
+          <div class="control-section__label">Audio Controls</div>
+          <div class="volume-control-row">
+            <button class="btn btn--sm btn--icon" id="btn-vol-down">&minus;</button>
+            <input type="range" class="slider" id="volume-slider" min="0" max="100" value="70" step="5">
+            <button class="btn btn--sm btn--icon" id="btn-vol-up">&plus;</button>
+            <span class="slider__value" id="volume-value-label">70%</span>
+          </div>
+          <button class="btn btn--sm btn--full" id="btn-mute" style="margin-top: var(--space-2);">Mute</button>
+        </div>
+
+        <!-- Language Switch -->
+        <div class="control-section">
+          <div class="control-section__label">Language Switch</div>
+          <div class="lang-switch-row">
+            <span class="lang-switch-row__label" id="lang-label-en">English</span>
+            <label class="big-toggle big-toggle--lang">
+              <input type="checkbox" class="big-toggle__input" id="toggle-language">
+              <span class="big-toggle__track">
+                <span class="big-toggle__thumb"></span>
+              </span>
+            </label>
+            <span class="lang-switch-row__label" id="lang-label-hi">Hindi</span>
+          </div>
+        </div>
+
+        <!-- Network Status -->
+        <div class="control-section">
+          <div class="control-section__label">Network Status</div>
+          <div id="network-status-items">
+            <div class="network-status-item">
+              <span class="network-status-item__dot disconnected" id="net-dot-wifi"></span>
+              <span class="network-status-item__label" id="net-label-wifi">Wi-Fi: —</span>
+            </div>
+            <div class="network-status-item">
+              <span class="network-status-item__dot disconnected" id="net-dot-4g"></span>
+              <span class="network-status-item__label" id="net-label-signal">Signal: —</span>
+            </div>
+            <div class="network-status-item">
+              <span class="network-status-item__dot disconnected" id="net-dot-chain"></span>
+              <span class="network-status-item__label" id="net-label-chain">Chain: —</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery Controls -->
+        <div class="control-section">
+          <div class="control-section__label">Battery Controls</div>
+          <div class="battery-control">
+            <div class="battery-row">
+              <div class="battery-bar-wrapper">
+                <div class="battery-bar-track">
+                  <div class="battery-bar-fill" id="battery-bar-fill" style="width:85%"></div>
+                </div>
+              </div>
+              <span class="battery-percentage" id="battery-percentage-label">85%</span>
+              <span class="charging-badge" id="charging-badge">Charging</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label class="toggle-wrapper">
+                <div class="toggle">
+                  <input type="checkbox" class="toggle__input" id="toggle-charging">
+                  <div class="toggle__track"></div>
+                  <div class="toggle__thumb"></div>
+                </div>
+                <span class="toggle-label">Charging</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Tools -->
+        <div class="control-section">
+          <div class="control-section__label">Simulation Tools</div>
+          <div class="btn-group btn-group--full" style="margin-bottom: var(--space-2);">
+            <button class="btn btn--accent" id="btn-inject-tx">Inject Test Transaction</button>
+            <label class="toggle-wrapper" style="margin-left: auto;">
+              <span class="toggle-label" style="margin-right: var(--space-2);">Demo Mode</span>
+              <div class="toggle">
+                <input type="checkbox" class="toggle__input" id="toggle-demo">
+                <div class="toggle__track"></div>
+                <div class="toggle__thumb"></div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Demo progress steps -->
+          <div class="demo-progress hidden" id="demo-progress">
+            <div class="demo-step" id="demo-step-0"><span class="demo-step__dot"></span>Power on device</div>
+            <div class="demo-step" id="demo-step-1"><span class="demo-step__dot"></span>Connect network</div>
+            <div class="demo-step" id="demo-step-2"><span class="demo-step__dot"></span>Generate QR</div>
+            <div class="demo-step" id="demo-step-3"><span class="demo-step__dot"></span>Customer payment</div>
+            <div class="demo-step" id="demo-step-4"><span class="demo-step__dot"></span>Blockchain confirm</div>
+            <div class="demo-step" id="demo-step-5"><span class="demo-step__dot"></span>Sound announcement</div>
+            <div class="demo-step" id="demo-step-6"><span class="demo-step__dot"></span>Update history</div>
+          </div>
+        </div>
+
+        <!-- System Utilities -->
+        <div class="control-section" id="window-utilities">
+          <div class="utilities-grid" style="margin-bottom: var(--space-2);">
+            <button class="btn" id="btn-tx-history">Transaction History</button>
+            <button class="btn" id="btn-open-firmware">Open Firmware</button>
+          </div>
+        </div>
+
+        <!-- Diagnostics & Simulations -->
+        <div class="control-section" id="window-diagnostics">
+          <div class="utilities-grid">
+            <button class="btn btn--danger" id="btn-reset-device">Reset Device</button>
+            <button class="btn" id="btn-sim-network-fail">Simulate Network Failure</button>
+            <button class="btn" id="btn-sim-low-battery" style="grid-column: 1 / -1;">Simulate Low Battery</button>
+          </div>
+        </div>
+
+        <!-- Developer Console -->
+        <div class="control-section" id="window-console">
+          <div class="dev-console" id="dev-console">
+            <div class="dev-console__line">
+              <span class="dev-console__time">--:--:--</span>
+              <span class="dev-console__msg info">KoshBox simulator ready.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════════════════ -->
+
+<!-- Exploded Hardware View Modal -->
+<div class="modal-overlay" id="modal-exploded">
+  <div class="modal exploded-modal">
+    <div class="modal__header">
+      <span class="modal__title">Hardware — Exploded View</span>
+      <button class="modal__close" data-close="modal-exploded">&#215;</button>
+    </div>
+    <div class="modal__body">
+      <div class="exploded-stage">
+        <!-- Component list -->
+        <div class="exploded-components" id="exploded-components">
+          <!-- Populated by exploded.js -->
+        </div>
+        <!-- Detail panel -->
+        <div class="component-detail" id="component-detail">
+          <div style="color:var(--text-muted); font-size:var(--text-sm);">
+            Select a component to view specifications.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transaction History Modal -->
+<div class="modal-overlay" id="modal-tx-history">
+  <div class="modal tx-history-modal">
+    <div class="modal__header">
+      <span class="modal__title">Transaction History</span>
+      <button class="modal__close" data-close="modal-tx-history">&#215;</button>
+    </div>
+    <div class="modal__body">
+      <table class="tx-table">
+        <thead>
+          <tr>
+            <th>Hash</th>
+            <th>Sender</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="tx-history-body">
+          <tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:var(--space-4);">No transactions yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Device Info Modal (single click) -->
+<div class="modal-overlay" id="modal-device-info">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal__header">
+      <span class="modal__title">Device Information</span>
+      <button class="modal__close" data-close="modal-device-info">&#215;</button>
+    </div>
+    <div class="modal__body">
+      <div class="inner-card" style="margin-bottom: var(--space-3);">
+        <div class="stat-row"><span class="stat-row__label">Device ID</span><span class="stat-row__value mono">KOSHBOX-001</span></div>
+        <div class="stat-row"><span class="stat-row__label">Firmware</span><span class="stat-row__value mono">v1.0.0</span></div>
+        <div class="stat-row"><span class="stat-row__label">Network</span><span class="stat-row__value mono">Kosh Testnet</span></div>
+        <div class="stat-row"><span class="stat-row__label">Chain ID</span><span class="stat-row__value mono">99991</span></div>
+        <div class="stat-row"><span class="stat-row__label">Hardware</span><span class="stat-row__value mono">ESP32-S3</span></div>
+        <div class="stat-row"><span class="stat-row__label">Power</span><span class="stat-row__value mono" id="info-modal-power">—</span></div>
+        <div class="stat-row"><span class="stat-row__label">Battery</span><span class="stat-row__value mono" id="info-modal-battery">—</span></div>
+        <div class="stat-row"><span class="stat-row__label">Uptime</span><span class="stat-row__value mono" id="info-modal-uptime">—</span></div>
+        <div class="stat-row"><span class="stat-row__label">Merchant</span><span class="stat-row__value mono" style="font-size:9px;" id="info-modal-address">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Advanced Diagnostics Modal (long press) -->
+<div class="modal-overlay" id="modal-diagnostics">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal__header">
+      <span class="modal__title">Advanced Diagnostics</span>
+      <button class="modal__close" data-close="modal-diagnostics">&#215;</button>
+    </div>
+    <div class="modal__body">
+      <div class="diagnostics-grid" id="diagnostics-grid">
+        <div class="diagnostic-card">
+          <div class="diagnostic-card__label">Battery</div>
+          <div class="diagnostic-card__value" id="diag-battery">85%</div>
+          <div class="diagnostic-card__sub" id="diag-battery-state">Discharging</div>
+        </div>
+        <div class="diagnostic-card">
+          <div class="diagnostic-card__label">Network</div>
+          <div class="diagnostic-card__value" id="diag-network">—</div>
+          <div class="diagnostic-card__sub">Signal quality</div>
+        </div>
+        <div class="diagnostic-card">
+          <div class="diagnostic-card__label">Block Height</div>
+          <div class="diagnostic-card__value" id="diag-block">0</div>
+          <div class="diagnostic-card__sub">Kosh Testnet</div>
+        </div>
+        <div class="diagnostic-card">
+          <div class="diagnostic-card__label">Pending Tx</div>
+          <div class="diagnostic-card__value" id="diag-pending">0</div>
+          <div class="diagnostic-card__sub">In mempool</div>
+        </div>
+        <div class="diagnostic-card">
+          <div class="diagnostic-card__label">Uptime</div>
+          <div class="diagnostic-card__value" id="diag-uptime">0s</div>
+          <div class="diagnostic-card__sub">Since boot</div>
+        </div>
+        <div class="diagnostic-card">
+          <div class="diagnostic-card__label">Total Payments</div>
+          <div class="diagnostic-card__value" id="diag-payments">0</div>
+          <div class="diagnostic-card__sub" id="diag-volume">Volume: 0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Scripts ──────────────────────────────────────────────────────────── -->
+<script src="scripts/state.js"></script>
+<script src="scripts/api-client.js"></script>
+<script src="scripts/components/battery.js"></script>
+<script src="scripts/components/network.js"></script>
+<script src="scripts/components/audio-engine.js"></script>
+<script src="scripts/components/qr-module.js"></script>
+<script src="scripts/components/transaction.js"></script>
+<script src="scripts/components/exploded.js"></script>
+<script src="scripts/components/demo.js"></script>
+<script src="scripts/components/device.js"></script>
+<script src="scripts/components/ui-utils.js"></script>
+<script src="scripts/main.js"></script>
+
+</body>
+</html>

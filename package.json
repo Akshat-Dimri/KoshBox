@@ -4,39 +4,32 @@
   "description": "Merchant payment infrastructure simulator and digital twin platform",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node tools/scripts/dev-server.js",
-    "frontend": "node tools/scripts/frontend-server.js",
-    "seed": "node tools/scripts/seed-wallets.js",
-    "reset": "node tools/scripts/reset-chain.js",
-    "generate:tx": "node tools/scripts/generate-test-tx.js",
-    "test": "node tests/run-all.js",
-    "test:backend": "node tests/backend/run.js",
-    "test:frontend": "node tests/frontend/run.js"
+    "start":          "node server.js",
+    "dev":            "node tools/scripts/dev-server.js",
+    "frontend":       "node tools/scripts/frontend-server.js",
+    "seed":           "node tools/scripts/seed-wallets.js",
+    "reset":          "node tools/scripts/reset-chain.js",
+    "generate:tx":    "node tools/scripts/generate-test-tx.js",
+    "test":           "node tests/run-all.js",
+    "test:backend":   "node tests/backend/run.js",
+    "test:frontend":  "node tests/frontend/run.js"
   },
   "dependencies": {
+    "cors":    "^2.8.5",
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "qrcode": "^1.5.3",
-    "crypto": "^1.0.1"
+    "qrcode":  "^1.5.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "npm":  ">=9.0.0"
   },
   "keywords": [
-    "payment",
-    "soundbox",
-    "blockchain",
-    "simulator",
-    "esp32",
-    "merchant",
-    "qr",
-    "kosh"
+    "payment", "soundbox", "blockchain", "simulator",
+    "esp32", "merchant", "qr", "fintech", "hackathon", "kosh"
   ],
-  "author": "KoshBox Team",
+  "author":  "KoshBox Team",
   "license": "MIT"
 }
