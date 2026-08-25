@@ -9,7 +9,9 @@
 
 const ApiClient = (() => {
 
-  const BASE_URL = "http://localhost:3001";
+  // Dev mode (npm run dev) serves frontend on :3000 and API on :3001 separately.
+  // Everywhere else (npm start / deployed), one server serves both — same origin.
+  const BASE_URL = location.port === "3000" ? "http://localhost:3001" : location.origin;
   let _isOnline = null;  // null = unknown, true = online, false = offline
 
   // ── Connectivity Check ────────────────────────────────────────────────────
@@ -238,7 +240,7 @@ const ApiClient = (() => {
       return {
         success: true,
         mode: "fixed",
-        payload: `http://localhost:3000/pages/payment.html?to=${state.qr.merchantAddress}&network=kosh-testnet-1&type=fixed`,
+        payload: `${location.origin}/pages/payment.html?to=${state.qr.merchantAddress}&network=kosh-testnet-1&type=fixed`,
         merchantAddress: state.qr.merchantAddress
       };
     }
@@ -248,7 +250,7 @@ const ApiClient = (() => {
       return {
         success: true,
         mode: "dynamic",
-        payload: `http://localhost:3000/pages/payment.html?to=${state.qr.merchantAddress}&session=${sessionId}&expires=${expiresAt}&type=dynamic`,
+        payload: `${location.origin}/pages/payment.html?to=${state.qr.merchantAddress}&session=${sessionId}&expires=${expiresAt}&type=dynamic`,
         sessionId,
         expiresAt
       };

@@ -132,6 +132,20 @@ class TransactionPool extends EventEmitter {
   }
 
   /**
+   * Mark a transaction as announced (audio played) and persist it,
+   * so the flag survives a server restart.
+   * @param {string} txHash
+   * @returns {object|null}
+   */
+  async markAnnounced(txHash) {
+    const tx = this.getTransaction(txHash);
+    if (!tx) return null;
+    tx.announced = true;
+    await this._persist();
+    return tx;
+  }
+
+  /**
    * Get a transaction by hash — searches all pools.
    * @param {string} txHash
    * @returns {object|null}

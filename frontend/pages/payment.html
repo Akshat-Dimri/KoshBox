@@ -376,7 +376,9 @@
 <a href="javascript:history.back()" class="back-link">&#8592; Back to Simulator</a>
 
 <script>
-  const API_BASE = "http://localhost:3001";
+  // Dev mode (npm run dev) serves frontend on :3000 and API on :3001 separately.
+  // Everywhere else (npm start / deployed), one server serves both — same origin.
+  const API_BASE = location.port === "3000" ? "http://localhost:3001" : location.origin;
   const params   = new URLSearchParams(window.location.search);
 
   const merchantAddress = params.get("to")      || "0x742d35Cc6634C0532925a3b8D4C9b7F3a7C2F1E";

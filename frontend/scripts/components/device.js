@@ -173,9 +173,12 @@ const DeviceController = (() => {
     }
 
     // Show payment on screen
-    const flashEl    = el("payment-flash");
-    const amountEl   = el("payment-flash-amount");
-    const labelEl    = el("payment-flash-label");
+    const flashEl  = el("payment-flash");
+    const amountEl = el("payment-flash-amount");
+    const labelEl  = el("payment-flash-label");
+    const videoEl  = el("payment-flash-video");
+    const gifEl    = el("payment-flash-gif");
+    const tickEl   = el("payment-tick");
 
     if (flashEl && amountEl) {
       amountEl.textContent = `${tx.coin} ${tx.amount}`;
@@ -183,10 +186,33 @@ const DeviceController = (() => {
         ? `RECEIVED FROM ${tx.senderName.toUpperCase()}`
         : "PAYMENT RECEIVED";
 
-      flashEl.classList.remove("visible");
+      flashEl.classList.remove("visible", "has-media");
+      videoEl?.classList.remove("active");
+      gifEl?.classList.remove("active");
+      if (tickEl) tickEl.style.display = "";
       void flashEl.offsetWidth; // reflow — restarts the tick draw animation
+
+      // Prefer the provided video; fall back to gif; fall back to the
+      // built-in tick checkmark if neither animation file is present.
+      let displayMs = 4000;
+      if (videoEl && videoEl.readyState >= 2 && !videoEl.error) {
+        videoEl.currentTime = 0;
+        videoEl.classList.add("active");
+        flashEl.classList.add("has-media");
+        if (tickEl) tickEl.style.display = "none";
+        videoEl.play().catch(() => {});
+        if (isFinite(videoEl.duration) && videoEl.duration > 0) {
+          displayMs = Math.max(1500, videoEl.duration * 1000 + 300);
+        }
+      } else if (gifEl && gifEl.complete && gifEl.naturalWidth > 0) {
+        gifEl.src = `${gifEl.src.split("?")[0]}?t=${Date.now()}`; // restart the gif loop
+        gifEl.classList.add("active");
+        flashEl.classList.add("has-media");
+        if (tickEl) tickEl.style.display = "none";
+      }
+
       flashEl.classList.add("visible");
-      setTimeout(() => flashEl.classList.remove("visible"), 4000);
+      setTimeout(() => flashEl.classList.remove("visible"), displayMs);
     }
 
     // Update payment label

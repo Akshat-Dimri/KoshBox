@@ -11,7 +11,9 @@ const config = {
     port: process.env.PORT || 3001,
     frontendPort: process.env.FRONTEND_PORT || 3000,
     host: "localhost",
-    corsOrigins: ["http://localhost:3000", "http://127.0.0.1:3000"]
+    corsOrigins: process.env.PUBLIC_URL
+      ? ["http://localhost:3000", "http://127.0.0.1:3000", process.env.PUBLIC_URL]
+      : ["http://localhost:3000", "http://127.0.0.1:3000"]
   },
 
   blockchain: {
@@ -59,7 +61,9 @@ const config = {
       { label: "12 Hours",   value: 43200000 },
       { label: "24 Hours",   value: 86400000 }
     ],
-    paymentBaseUrl: "http://localhost:3000/pages/payment.html",
+    // Set PUBLIC_URL once on your host (e.g. https://your-app.onrender.com) so
+    // QR codes point at the real public site instead of localhost.
+    paymentBaseUrl: `${process.env.PUBLIC_URL || "http://localhost:3000"}/pages/payment.html`,
     sessionExpiryBuffer: 300000  // 5 minute buffer before showing QR as expiring
   },
 

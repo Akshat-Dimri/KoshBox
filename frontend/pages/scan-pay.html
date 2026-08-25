@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KoshBox — Scan &amp; Pay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #111111; --surface: #1a1a1a; --border: #2a2a2a;
+    --text: #e2e2e2; --muted: #888888; --dim: #444444;
+    --success: #22c55e; --error: #ef4444; --accent: #3b82f6;
+    --font-ui: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-ui); background: var(--bg); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .brand {
+    font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--muted);
+    letter-spacing: 0.14em; text-transform: uppercase; text-align: center; margin-bottom: 18px;
+  }
+  .scan-frame {
+    position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 14px;
+    overflow: hidden; background: #000; border: 1px solid var(--border); display: none;
+  }
+  .scan-frame.active { display: block; }
+  .scan-frame video { width: 100%; height: 100%; object-fit: cover; }
+  .scan-frame .reticle {
+    position: absolute; inset: 12%; border: 2px solid rgba(255,255,255,0.6);
+    border-radius: 16px; pointer-events: none;
+  }
+  .scan-hint {
+    text-align: center; font-size: 12px; color: var(--muted); margin-top: 12px;
+  }
+  .state-panel { text-align: center; padding: 28px 8px; }
+  .state-panel .icon { font-size: 34px; margin-bottom: 10px; }
+  .state-panel .title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .state-panel .sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .btn {
+    width: 100%; padding: 13px; border-radius: 10px; border: none; cursor: pointer;
+    font-family: var(--font-ui); font-size: 14px; font-weight: 600; margin-top: 14px;
+    background: var(--accent); color: #fff; transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.85; }
+  .btn.secondary { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+  .divider {
+    display: flex; align-items: center; gap: 10px; margin: 18px 0;
+    color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block; font-size: 10px; font-weight: 600; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%; background: #222; border: 1px solid #333; border-radius: 8px;
+    color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 10px 12px;
+    outline: none;
+  }
+  .field input:focus { border-color: #444; }
+  .error-text { color: var(--error); font-size: 12px; margin-top: 8px; text-align: center; display: none; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="brand">KoshBox — Scan &amp; Pay</div>
+
+  <!-- Desktop / non-mobile gate -->
+  <div class="state-panel" id="panel-desktop-block" style="display:none;">
+    <div class="icon">📱</div>
+    <div class="title">Mobile only</div>
+    <div class="sub">This scanner is built for phones. Open this page on your mobile device to scan a KoshBox QR code.</div>
+    <button class="btn secondary" id="btn-continue-anyway">Continue anyway (testing)</button>
+  </div>
+
+  <!-- Insecure context gate (camera needs HTTPS or localhost) -->
+  <div class="state-panel" id="panel-insecure-block" style="display:none;">
+    <div class="icon">🔒</div>
+    <div class="title">Secure connection required</div>
+    <div class="sub">Camera access only works over HTTPS. Make sure you're opening this page's <b>https://</b> address, not http.</div>
+  </div>
+
+  <!-- Main scan UI -->
+  <div id="panel-main">
+    <div class="scan-frame" id="scan-frame">
+      <video id="video" playsinline autoplay muted></video>
+      <div class="reticle"></div>
+    </div>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div class="scan-hint" id="scan-hint">Point your camera at the merchant's KoshBox QR code.</div>
+    <div class="error-text" id="camera-error"></div>
+
+    <button class="btn" id="btn-start-camera">Start Camera</button>
+
+    <div class="divider">or enter manually</div>
+
+    <div class="field">
+      <label>Merchant ID / QR text</label>
+      <input type="text" id="manual-input" placeholder="Paste QR link, or paste/type merchant address">
+    </div>
+    <button class="btn secondary" id="btn-manual-submit">Continue</button>
+  </div>
+</div>
+
+<script>
+  "use strict";
+
+  // ── Mobile / secure-context gating ────────────────────────────────────────
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && window.innerWidth < 900);
+
+  if (!isMobile) {
+    document.getElementById("panel-main").style.display = "none";
+    document.getElementById("panel-desktop-block").style.display = "block";
+    document.getElementById("btn-continue-anyway").addEventListener("click", () => {
+      document.getElementById("panel-desktop-block").style.display = "none";
+      document.getElementById("panel-main").style.display = "block";
+    });
+  } else if (!window.isSecureContext) {
+    document.getElementById("panel-main").style.display = "none";
+    document.getElementById("panel-insecure-block").style.display = "block";
+  }
+
+  // ── Elements ───────────────────────────────────────────────────────────────
+  const video       = document.getElementById("video");
+  const canvas      = document.getElementById("canvas");
+  const ctx         = canvas.getContext("2d", { willReadFrequently: true });
+  const scanFrame   = document.getElementById("scan-frame");
+  const scanHint    = document.getElementById("scan-hint");
+  const cameraError = document.getElementById("camera-error");
+  const btnStart    = document.getElementById("btn-start-camera");
+
+  let stream = null;
+  let scanning = false;
+  let jsQRReady = null; // promise, loaded lazily on first camera start
+
+  // Load jsQR only when needed (keeps initial page light).
+  function loadJsQR() {
+    if (jsQRReady) return jsQRReady;
+    jsQRReady = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js";
+      s.onload = resolve;
+      s.onerror = () => reject(new Error("Could not load QR scanner library"));
+      document.head.appendChild(s);
+    });
+    return jsQRReady;
+  }
+
+  // ── Start camera + scan loop ──────────────────────────────────────────────
+  btnStart.addEventListener("click", async () => {
+    cameraError.style.display = "none";
+    btnStart.disabled = true;
+    btnStart.textContent = "Starting…";
+
+    try {
+      await loadJsQR();
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+
+      scanFrame.classList.add("active");
+      btnStart.style.display = "none";
+      scanHint.textContent = "Scanning…";
+      scanning = true;
+      requestAnimationFrame(tick);
+
+    } catch (err) {
+      btnStart.disabled = false;
+      btnStart.textContent = "Start Camera";
+      cameraError.style.display = "block";
+      cameraError.textContent = err.name === "NotAllowedError"
+        ? "Camera permission denied. You can still enter the merchant ID manually below."
+        : "Camera unavailable (" + err.message + "). Use manual entry below.";
+    }
+  });
+
+  function tick() {
+    if (!scanning) return;
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code  = window.jsQR(frame.data, frame.width, frame.height, {
+        inversionAttempts: "dontInvert"
+      });
+
+      if (code && code.data) {
+        scanning = false;
+        stopCamera();
+        goToPayment(code.data);
+        return;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  }
+  window.addEventListener("pagehide", stopCamera);
+
+  // ── Manual entry fallback ────────────────────────────────────────────────
+  document.getElementById("btn-manual-submit").addEventListener("click", () => {
+    const raw = document.getElementById("manual-input").value.trim();
+    if (!raw) {
+      alert("Enter a merchant address or paste the QR link/text.");
+      return;
+    }
+    stopCamera();
+    goToPayment(raw);
+  });
+
+  // ── Resolve scanned/typed text into a payment.html navigation ────────────
+  // Accepts either a full KoshBox payment URL (any origin — we only trust the
+  // query params) or a bare merchant address typed/pasted by hand.
+  function goToPayment(raw) {
+    let params;
+    try {
+      const url = new URL(raw, location.origin);
+      params = url.searchParams;
+      if (!params.get("to")) throw new Error("no address in URL");
+    } catch (_) {
+      // Not a URL (or missing "to") — treat the raw text as a bare merchant address.
+      params = new URLSearchParams({ to: raw, type: "fixed" });
+    }
+    location.href = "payment.html?" + params.toString();
+  }
+</script>
+</body>
+</html>

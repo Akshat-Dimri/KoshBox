@@ -51,9 +51,19 @@
 
       <div class="panel__body qr-panel" style="padding: 0;">
 
-        <!-- Fixed Merchant QR -->
+        <!-- QR Mode -->
         <div style="padding: var(--space-4) var(--space-5) 0;">
-          <div class="panel-section__label" style="margin-bottom: var(--space-3);">Fixed Merchant QR</div>
+          <div class="panel-section__label" style="margin-bottom: var(--space-3);" id="qr-section-title">Merchant QR</div>
+          <div class="qr-mode-toggle-row">
+            <span class="qr-mode-toggle-row__label active" id="qr-mode-toggle-label-fixed">Fixed</span>
+            <label class="big-toggle big-toggle--sm big-toggle--lang" id="qr-mode-toggle-wrapper">
+              <input type="checkbox" class="big-toggle__input" id="toggle-qr-mode">
+              <span class="big-toggle__track">
+                <span class="big-toggle__thumb"></span>
+              </span>
+            </label>
+            <span class="qr-mode-toggle-row__label" id="qr-mode-toggle-label-dynamic">Dynamic</span>
+          </div>
         </div>
 
         <!-- QR device frame with perspective tilt -->
@@ -67,11 +77,14 @@
                 <div class="qr-canvas-wrapper__refresh-icon"></div>
               </div>
             </div>
-            <div style="display:flex; justify-content:center; margin-top: var(--space-2);">
+            <div class="qr-device-frame__footer">
               <span class="qr-mode-badge" id="qr-mode-badge">
                 <span class="qr-mode-badge__dot"></span>
                 <span id="qr-mode-label">Fixed</span>
               </span>
+              <button class="qr-change-btn" id="btn-qr-change" title="Generate a new QR now">
+                <span class="qr-change-btn__icon">&#8635;</span> Change QR
+              </button>
             </div>
           </div>
         </div>
@@ -268,6 +281,20 @@
 
               <!-- Payment flash overlay -->
               <div class="device-screen__payment-flash" id="payment-flash">
+
+                <!-- Provided animation goes here. Drop the file in
+                     assets/animations/ and set the src below (mp4/webm take
+                     priority; falls back to the gif <img> if video can't play).
+                     See docs/hardware-mapping.md "Payment Animation" note for
+                     exact export dimensions. -->
+                <video class="device-screen__payment-media" id="payment-flash-video" muted playsinline preload="auto">
+                  <source src="assets/animations/payment-received.webm" type="video/webm">
+                  <source src="assets/animations/payment-received.mp4" type="video/mp4">
+                </video>
+                <img class="device-screen__payment-media" id="payment-flash-gif" src="assets/animations/payment-received.gif" alt="" style="display:none;">
+
+                <!-- Built-in fallback tick — shown automatically if no
+                     animation file is found above. -->
                 <svg class="payment-tick" id="payment-tick" width="56" height="56" viewBox="0 0 56 56">
                   <circle class="payment-tick__circle" cx="28" cy="28" r="25" fill="none" stroke-width="3"/>
                   <path class="payment-tick__check" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M16 29l8 8 16-18"/>
@@ -430,14 +457,13 @@
               <span class="charging-badge" id="charging-badge">Charging</span>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <label class="toggle-wrapper">
-                <div class="toggle">
-                  <input type="checkbox" class="toggle__input" id="toggle-charging">
-                  <div class="toggle__track"></div>
-                  <div class="toggle__thumb"></div>
-                </div>
-                <span class="toggle-label">Charging</span>
+              <label class="big-toggle big-toggle--sm">
+                <input type="checkbox" class="big-toggle__input" id="toggle-charging">
+                <span class="big-toggle__track">
+                  <span class="big-toggle__thumb"></span>
+                </span>
               </label>
+              <span class="toggle-label">Charging</span>
             </div>
           </div>
         </div>
@@ -449,11 +475,12 @@
             <button class="btn btn--accent" id="btn-inject-tx">Inject Test Transaction</button>
             <label class="toggle-wrapper" style="margin-left: auto;">
               <span class="toggle-label" style="margin-right: var(--space-2);">Demo Mode</span>
-              <div class="toggle">
-                <input type="checkbox" class="toggle__input" id="toggle-demo">
-                <div class="toggle__track"></div>
-                <div class="toggle__thumb"></div>
-              </div>
+              <span class="big-toggle big-toggle--sm">
+                <input type="checkbox" class="big-toggle__input" id="toggle-demo">
+                <span class="big-toggle__track">
+                  <span class="big-toggle__thumb"></span>
+                </span>
+              </span>
             </label>
           </div>
 

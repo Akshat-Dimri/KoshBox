@@ -226,6 +226,28 @@ async function runAll() {
     assert(Array.isArray(res.body.transactions), "transactions should be array");
   });
 
+  await test("GET /api/transactions/history reports announced status (regression: audio replay on restart)", async () => {
+    // Find any confirmed/finalized tx and mark it announced.
+    const before = await get("/api/transactions/history?limit=50");
+    const tx = before.body.transactions.find(
+      t => t.status === "confirmed" || t.status === "finalized"
+    );
+    assert(tx, "need at least one confirmed transaction to test against");
+
+    await post(`/api/transactions/${tx.txHash}/mark-announced`);
+
+    const after = await get("/api/transactions/history?limit=50");
+    const updated = after.body.transactions.find(t => t.txHash === tx.txHash);
+    assert(updated, "transaction should still be in history");
+    assertEqual(
+      updated.announced,
+      true,
+      "history must expose `announced` — otherwise every server restart / page " +
+      "reload re-plays the full payment audio history, since the frontend poller " +
+      "relies on this flag to skip already-announced transactions"
+    );
+  });
+
   console.log("\n── Device ─────────────────────────────");
   await test("GET /api/device/state returns device state", async () => {
     const res = await get("/api/device/state");

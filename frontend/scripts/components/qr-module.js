@@ -26,14 +26,60 @@ const QRModule = (() => {
     rotationTimer: document.getElementById("qr-rotation-timer"),
     countdown:     document.getElementById("qr-timer-countdown"),
     addressDisplay:document.getElementById("merchant-address-display"),
-    networkDisplay:document.getElementById("merchant-network-display")
+    networkDisplay:document.getElementById("merchant-network-display"),
+    sectionTitle:  document.getElementById("qr-section-title"),
+    modeToggle:    document.getElementById("toggle-qr-mode"),
+    labelFixed:    document.getElementById("qr-mode-toggle-label-fixed"),
+    labelDynamic:  document.getElementById("qr-mode-toggle-label-dynamic"),
+    changeBtn:     document.getElementById("btn-qr-change")
   });
 
   // ── Init ──────────────────────────────────────────────────────────────────
   async function init() {
     await _loadMerchantInfo();
     _renderFixed();
+    _wireModeControls();
     DevConsole.log("QR module initialized", "info");
+  }
+
+  // ── Sync the Fixed/Dynamic toggle, labels, and section title to state ─────
+  function _syncModeUI(mode) {
+    const e = els();
+    if (e.sectionTitle) {
+      e.sectionTitle.textContent = mode === "dynamic" ? "Dynamic Merchant QR" : "Fixed Merchant QR";
+    }
+    if (e.modeToggle) e.modeToggle.checked = mode === "dynamic";
+    if (e.labelFixed)   e.labelFixed.classList.toggle("active", mode === "fixed");
+    if (e.labelDynamic) e.labelDynamic.classList.toggle("active", mode === "dynamic");
+  }
+
+  // ── Wire mode toggle + Change QR button (called once, on init) ────────────
+  function _wireModeControls() {
+    const e = els();
+    e.modeToggle?.addEventListener("change", (evt) => {
+      if (evt.target.checked) {
+        switchToDynamic();
+      } else {
+        switchToFixed();
+      }
+    });
+    e.changeBtn?.addEventListener("click", () => refresh());
+  }
+
+  // ── Change QR (manual, on-demand) ─────────────────────────────────────────
+  // Fixed mode: re-fetches/re-renders the merchant's QR (useful after the
+  // merchant address changes on the backend, or just to force a redraw).
+  // Dynamic mode: rotates immediately instead of waiting for the timer.
+  async function refresh() {
+    if (state.qr.mode === "dynamic") {
+      _clearRotationTimer();
+      await _renderDynamic();
+      _startRotationTimer();
+      UiUtils?.toast?.("QR changed", "info");
+    } else {
+      await _renderFixed();
+      UiUtils?.toast?.("QR refreshed", "info");
+    }
   }
 
   // ── Truncate address for display ────────────────────────────────────────
@@ -76,6 +122,7 @@ const QRModule = (() => {
         e.modeBadge.classList.remove("qr-mode-badge--dynamic");
       }
       if (e.rotationTimer) e.rotationTimer.classList.add("hidden");
+      _syncModeUI("fixed");
 
     } catch (err) {
       DevConsole.log(`QR render error: ${err.message}`, "error");
@@ -111,6 +158,7 @@ const QRModule = (() => {
       if (e.modeLabel)  e.modeLabel.textContent  = "Dynamic";
       if (e.modeBadge)  e.modeBadge.classList.add("qr-mode-badge--dynamic");
       if (e.rotationTimer) e.rotationTimer.classList.remove("hidden");
+      _syncModeUI("dynamic");
 
       _startCountdown(expiresAt);
 
@@ -250,14 +298,14 @@ const QRModule = (() => {
   // ── Local Payload Builders (offline fallback) ─────────────────────────────
   function _buildLocalFixedPayload() {
     const addr = state.qr.merchantAddress;
-    return `http://localhost:3000/pages/payment.html?to=${addr}&network=kosh-testnet-1&type=fixed`;
+    return `${location.origin}/pages/payment.html?to=${addr}&network=kosh-testnet-1&type=fixed`;
   }
 
   function _buildLocalDynamicPayload() {
     const addr    = state.qr.merchantAddress;
     const session = Math.random().toString(16).substring(2, 18);
     const expires = Date.now() + state.qr.rotationInterval + 300000;
-    return `http://localhost:3000/pages/payment.html?to=${addr}&session=${session}&expires=${expires}&type=dynamic`;
+    return `${location.origin}/pages/payment.html?to=${addr}&session=${session}&expires=${expires}&type=dynamic`;
   }
 
   // ── Format Interval ───────────────────────────────────────────────────────
@@ -273,7 +321,8 @@ const QRModule = (() => {
     showPlaceholder,
     switchToFixed,
     switchToDynamic,
-    setRotationInterval
+    setRotationInterval,
+    refresh
   };
 
 })();

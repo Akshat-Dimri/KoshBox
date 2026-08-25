@@ -315,6 +315,23 @@
 .big-toggle--lang .big-toggle__input:checked + .big-toggle__track .big-toggle__thumb {
   background: var(--accent-purple);
 }
+
+/* Small variant — same track/thumb structure & colors as the power/language
+   switch, just scaled down. Used by Charging, Demo Mode, and QR Mode. */
+.big-toggle--sm {
+  width: 32px;
+  height: 18px;
+}
+
+.big-toggle--sm .big-toggle__thumb {
+  width: 12px;
+  height: 12px;
+}
+
+.big-toggle--sm .big-toggle__input:checked + .big-toggle__track .big-toggle__thumb {
+  transform: translateX(14px);
+}
+
 .demo-row {
   display: flex;
   align-items: center;

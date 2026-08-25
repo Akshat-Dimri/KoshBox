@@ -579,7 +579,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const API = "http://localhost:3001";
+  // Dev mode (npm run dev) serves frontend on :3000 and API on :3001 separately.
+  // Everywhere else (npm start / deployed), one server serves both — same origin.
+  const API = location.port === "3000" ? "http://localhost:3001" : location.origin;
   const txMap = new Map();  // txHash → card element
   let txCount = 0;
   let merchantAddress = "0x742d35Cc6634C0532925a3b8D4C9b7F3a7C2F1E";

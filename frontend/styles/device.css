@@ -125,11 +125,17 @@
 }
 
 /* ── Status Bar ─────────────────────────────────────────────────────────── */
+/* Fixed-column grid — NOT flex+space-between. With flex, every indicator's
+   gap is recalculated off the total row content width, so changing one
+   label's text (e.g. volume "80%" -> "100%", or "Mute" -> "Unmute") shifted
+   ALL the other LEDs/labels sideways too. A grid with a fixed track count
+   gives every indicator its own immovable column — a status change inside
+   one column can never affect its neighbors' position. */
 .device-status-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-items: start;
+  padding: 10px 12px;
   border-bottom: 1px solid #161616;
 }
 
@@ -139,6 +145,7 @@
   flex-direction: column;
   align-items: center;
   gap: 5px;
+  min-width: 0; /* allow the grid column to clip/ellipsize instead of grow */
 }
 
 .status-indicator__led {
@@ -148,6 +155,12 @@
   background: var(--led-power-off);
   border: 1px solid rgba(0,0,0,0.4);
   transition: background 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Non-LED icon indicators (volume / language) share the same fixed
+   10x10 box so their column behaves identically to the LED columns. */
+.status-indicator > div[style*="width:10px"] {
   flex-shrink: 0;
 }
 
@@ -210,6 +223,9 @@
   text-align: center;
   line-height: 1.2;
   white-space: nowrap;
+  min-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Device Screen — grows to fill available space ───────────────────────── */
@@ -310,7 +326,38 @@
 
 .device-screen__payment-flash.visible { opacity: 1; }
 
-/* ── Payment Tick (Google Pay-style checkmark) ───────────────────────────── */
+/* Provided animation (video or gif) — fills the screen behind the amount/
+   label text. Hidden by default; JS reveals whichever source loaded. */
+.device-screen__payment-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  z-index: 0;
+}
+
+.device-screen__payment-media.active { display: block; }
+
+/* Text sits above the media layer with a scrim so it stays legible */
+.device-screen__payment-amount,
+.device-screen__payment-label,
+.payment-tick {
+  position: relative;
+  z-index: 1;
+}
+
+.device-screen__payment-flash.has-media {
+  background: rgba(0,0,0,0.25);
+}
+
+.device-screen__payment-flash.has-media .device-screen__payment-amount,
+.device-screen__payment-flash.has-media .device-screen__payment-label {
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* ── Payment Tick (Google Pay-style checkmark) — fallback only ──────────── */
 .payment-tick {
   margin-bottom: 4px;
 }

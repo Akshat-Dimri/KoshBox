@@ -105,7 +105,8 @@ router.get("/history", (req, res) => {
       senderName: tx.senderName,
       status:     tx.status,
       blockIndex: tx.blockIndex,
-      timestamp:  tx.timestamp
+      timestamp:  tx.timestamp,
+      announced:  tx.announced
     }))
   });
 });
@@ -170,12 +171,11 @@ router.post("/inject", async (req, res) => {
  * Mark a transaction as announced (called by frontend after audio plays).
  */
 router.post("/:txHash/mark-announced", async (req, res) => {
-  const tx = txPool.getTransaction(req.params.txHash);
+  const tx = await txPool.markAnnounced(req.params.txHash);
   if (!tx) {
     return res.status(404).json({ success: false, error: "Transaction not found" });
   }
 
-  tx.announced = true;
   await deviceTwin.recordPayment(tx);
 
   return res.json({ success: true });
